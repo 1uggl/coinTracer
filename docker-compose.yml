@@ -1,6 +1,7 @@
 version: '3'
 services:
   backend:
+    container_name: cointracerbackend
     build: ./backend
     ports:
       - "3000:3000"
@@ -8,8 +9,11 @@ services:
       - ./backend:/app
     environment:
       NODE_ENV: production
+    networks:
+      - cointracer-network
 
   web:
+    container_name: cointracerwebpage
     build: ./nginx
     ports:
       - "8080:80"
@@ -17,4 +21,9 @@ services:
       - ./html:/usr/share/nginx/html
     depends_on:
       - backend
+    networks:
+      - cointracer-network
 
+networks:
+  cointracer-network:
+    name: cointracer-network

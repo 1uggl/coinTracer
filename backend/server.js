@@ -1,11 +1,13 @@
 import express from 'express';
 import tls from 'tls';
 
+//HOPS for frontend development
+let hops = 1000;
+
 const app = express();
 const PORT = 3000;
 
 app.use(express.json()); // Middleware zum Verarbeiten von JSON-Daten
-
 // Middleware zum Setzen des CORS-Headers
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Erlaubt Anfragen von allen Quellen. Du kannst hier spezifische URLs angeben.
@@ -37,7 +39,6 @@ const getTransactionFromFulcrum = (txid) => {
     });
 
     client.on('data', (data) => {
-      console.log(data.toString())
       dataBuffer += data.toString();
       if (dataBuffer.includes("}}")) {
         try {
@@ -62,6 +63,42 @@ const getTransactionFromFulcrum = (txid) => {
       reject(error);
     });
   });
+};
+
+const traceTransactionToCoinbase = async (transactionId) => {
+
+  const recursiveSearchToCoinbase = async (transactionId, checkedTransactions = [], foundCoinbases = []) => {
+
+    const processingTransaction = await getTransactionFromFulcrum(transactionId);
+    hops--
+    console.log("Processing Transaction: " + processingTransaction.txid);
+    checkedTransactions.push(processingTransaction);
+
+    // Prüfen, ob die Transaktion eine Coinbase ist
+    if (processingTransaction.vin.length === 1 && !processingTransaction.vin[0].txid) {
+      console.log("Coinbase reached");
+      foundCoinbases.push(processingTransaction);
+      return { foundCoinbases, checkedTransactions };
+    }
+
+    if (hops > 0) {
+      // Rekursiv durch alle Vorgänger-Transaktionen suchen
+      for (let vin of processingTransaction.vin) {
+        if (vin.txid) {
+          try {
+            let newTransaction = await getTransactionFromFulcrum(vin.txid);
+            const result = await recursiveSearchToCoinbase(newTransaction.txid, checkedTransactions, foundCoinbases);
+            // Es werden keine frühzeitigen Rückgaben durchgeführt, da wir alle Coinbases finden wollen.
+          } catch (e) {
+            console.error("Fehler in der Suche nach der Coinbase:", e.message);
+          }
+        }
+      }
+    }
+    return { foundCoinbases, checkedTransactions };
+  };
+
+  return await recursiveSearchToCoinbase(transactionId);
 };
 
 // Funktion zur Verfolgung der Transaktionen rückwärts
@@ -113,7 +150,7 @@ app.post('/traceTransactions', async (req, res) => {
 
   try {
     const path = await traceTransactions(startTransactionID, targetTransactionID);
-
+    console.log("Work finished, sending response")
     res.json({
       message: 'Trace completed successfully',
       data: {
@@ -123,6 +160,27 @@ app.post('/traceTransactions', async (req, res) => {
   } catch (error) {
     console.error('Error processing transactions:', error.message);
     res.status(500).json({ error: 'Error processing transactions', details: error.message });
+  }
+});
+
+app.post('/traceTransactionToCoinbase', async (req, res) => {
+  console.log("Received request for tracing Transaction:", req.body.transactionId)
+  const { transactionId } = req.body;
+  try {
+    const result = await traceTransactionToCoinbase(transactionId);
+    console.log("Work finished, sending response")
+
+    res.json({
+      message: 'Trace completed successfully',
+      data: {
+        transactions: result.checkedTransactions,
+        coinbases: result.foundCoinbases,
+        //adresses: result.foundAdresses,
+
+      }});
+  } catch (error) {
+    console.error('Error tracing to Coinbase', error.message);
+    res.status(500).json({ error: 'Error tracing to Coinbase', details: error.message });
   }
 });
 

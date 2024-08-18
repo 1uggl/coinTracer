@@ -4,6 +4,8 @@ document.getElementById("startTransaction").value="84a6f5a3b8b503f0c1e88466c6804
 document.getElementById("targetTransaction").value="923947de0a9726756d155625a1bdeb1d277e4f7436e3900bee5e3d5b17fd9843"
 
 const startTracer = async () => {
+addToInfo("Tracing started...")
+  freezeGui();
   const startTransactionID = document.getElementById("startTransaction").value;
   const targetTransactionID = document.getElementById("targetTransaction").value;
 
@@ -60,6 +62,11 @@ const addToInfo = infoText => {
   targetList.appendChild(newListElement)
 
 }
+
+const freezeGui = () => {
+  
+}
+
 document.getElementById("masterForm").addEventListener("submit", (event) => {
   event.preventDefault();
   startTracer();
