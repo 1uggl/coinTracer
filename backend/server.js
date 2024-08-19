@@ -1,8 +1,7 @@
 import express from 'express';
 import tls from 'tls';
+import bitcoin from 'bitcoinjs-lib';
 
-//HOPS for frontend development
-let hops = 1000;
 
 const app = express();
 const PORT = 3000;
@@ -23,8 +22,58 @@ const options = {
   rejectUnauthorized: false, // Set this to true in production
 };
 
+const convertConfirmationsToHeight = result => {
+  result.foundCoinbases.forEach(tx => {
+    tx.blockheight = result.blockHeight - tx.confirmations
+  })
+  result.checkedTransactions.forEach(tx => {
+    tx.blockheight = result.blockHeight - tx.confirmations
+  })
+  result.foundCoinbases.sort((a, b) => a.blockheight - b.blockheight)
+  result.checkedTransactions.sort((a, b) => a.blockheight - b.blockheight)
+}
+
+const getBlockheight = () => {
+  console.log("Getting Blockheight")
+  return new Promise((resolve, reject) => {
+
+    const client = tls.connect(options, () => {
+      const request = JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'blockchain.headers.subscribe',
+        params: [],
+      });
+      client.write(request + '\n');
+    });
+
+    client.on('data', (data) => {
+        try {
+          const parsedData = JSON.parse(data);
+          if (parsedData.error) {
+            console.error('Fulcrum error:', parsedData.error);
+            reject(new Error('Error from Fulcrum: ' + parsedData.error.message));
+          } else {
+            resolve(parsedData.result.height + 1);
+          }
+        } catch (e) {
+          console.error('Failed to parse response:', e.message);
+          reject(new Error('Failed to parse response'));
+        } finally { 
+          client.end() //end the connection to keep under the limit of fulcrum
+        }
+      }
+    );
+
+    client.on('error', (error) => {
+      console.error('Error during TLS connection:', error.message);
+      reject(error);
+    });
+  });
+};
 // Funktion zur Abfrage der Transaktion von Fulcrum
 const getTransactionFromFulcrum = (txid) => {
+  console.log("Passing TX to fulcrum", txid)
   return new Promise((resolve, reject) => {
     let dataBuffer = "";
 
@@ -66,36 +115,46 @@ const getTransactionFromFulcrum = (txid) => {
 };
 
 const traceTransactionToCoinbase = async (transactionId) => {
+let hops = 50;
+  let blockHeight;
+
+  try {
+    blockHeight = await getBlockheight();
+    console.log("Block Height:", blockHeight)
+  } catch (error) {
+    console.log("Error fetching Block Height:", error.message)
+    return
+  }
 
   const recursiveSearchToCoinbase = async (transactionId, checkedTransactions = [], foundCoinbases = []) => {
-
     const processingTransaction = await getTransactionFromFulcrum(transactionId);
-    hops--
-    console.log("Processing Transaction: " + processingTransaction.txid);
+
+    hops--;
     checkedTransactions.push(processingTransaction);
 
     // Prüfen, ob die Transaktion eine Coinbase ist
     if (processingTransaction.vin.length === 1 && !processingTransaction.vin[0].txid) {
       console.log("Coinbase reached");
       foundCoinbases.push(processingTransaction);
-      return { foundCoinbases, checkedTransactions };
+    return { foundCoinbases, checkedTransactions, blockHeight };
     }
 
     if (hops > 0) {
       // Rekursiv durch alle Vorgänger-Transaktionen suchen
       for (let vin of processingTransaction.vin) {
-        if (vin.txid) {
+        if (vin.txid && !checkedTransactions.some(tx => tx.txid === vin.txid)) {
           try {
-            let newTransaction = await getTransactionFromFulcrum(vin.txid);
-            const result = await recursiveSearchToCoinbase(newTransaction.txid, checkedTransactions, foundCoinbases);
-            // Es werden keine frühzeitigen Rückgaben durchgeführt, da wir alle Coinbases finden wollen.
+            const result = await recursiveSearchToCoinbase(vin.txid, checkedTransactions, foundCoinbases);
+            foundCoinbases = result.foundCoinbases;
+            checkedTransactions = result.checkedTransactions;
           } catch (e) {
             console.error("Fehler in der Suche nach der Coinbase:", e.message);
           }
         }
       }
     }
-    return { foundCoinbases, checkedTransactions };
+
+    return { foundCoinbases, checkedTransactions, blockHeight };
   };
 
   return await recursiveSearchToCoinbase(transactionId);
@@ -107,7 +166,6 @@ const traceTransactions = async (startTxid, targetTxid) => {
   const targetTransaction = await getTransactionFromFulcrum(targetTxid)
 
   const recursiveSearch = async (transaction, array = []) => {
-    console.log("Aktuelle transaction: " + transaction.txid)
     array.push(transaction)
     if (transaction.txid === startTxid) {
       console.log("Link found: " + array)
@@ -144,10 +202,28 @@ const traceTransactions = async (startTxid, targetTxid) => {
   }
 }
 
+//Route for getting one transaction
+app.post('/getTransaction', async (req, res) => {
+  const { transactionId } = req.body;
+  console.log("Received Request for transaction:", transactionId)
+  try {
+    const result = await getTransactionFromFulcrum(transactionId);
+    console.log("Work finished, sending response")
+    res.json({
+      message: 'Trace completed successfully',
+      data: {
+        result,
+      }});
+  } catch (error) {
+    console.error('Error processing transactions:', error.message);
+    res.status(500).json({ error: 'Error processing transactions', details: error.message });
+  }
+});
+
 // Route für die Transaktionsverarbeitung
 app.post('/traceTransactions', async (req, res) => {
   const { startTransactionID, targetTransactionID } = req.body;
-
+  console.log("Received request for finding link between " + startTransactionID + " and " + targetTransactionID)
   try {
     const path = await traceTransactions(startTransactionID, targetTransactionID);
     console.log("Work finished, sending response")
@@ -164,19 +240,20 @@ app.post('/traceTransactions', async (req, res) => {
 });
 
 app.post('/traceTransactionToCoinbase', async (req, res) => {
-  console.log("Received request for tracing Transaction:", req.body.transactionId)
-  const { transactionId } = req.body;
+  const targetTransactionID = req.body.targetTransactionID;
+  console.log("Received request for tracing Transaction:", targetTransactionID);
   try {
-    const result = await traceTransactionToCoinbase(transactionId);
-    console.log("Work finished, sending response")
-
+    const result = await traceTransactionToCoinbase(targetTransactionID);
+    console.log("Work finished, processing result")
+convertConfirmationsToHeight(result)
+    console.log("Coinbases found:", result.foundCoinbases.length)
+    console.log("Transactions processed:", result.checkedTransactions.length)
     res.json({
       message: 'Trace completed successfully',
       data: {
         transactions: result.checkedTransactions,
         coinbases: result.foundCoinbases,
-        //adresses: result.foundAdresses,
-
+blockheight: result.blockHeight
       }});
   } catch (error) {
     console.error('Error tracing to Coinbase', error.message);

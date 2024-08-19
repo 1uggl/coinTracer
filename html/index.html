@@ -10,14 +10,15 @@
 <body>
   <header>
     <h1>Cointracer</h1>
-    <p>Find the motherblock of your coins</p>
+    <p class="inline"><a href="linkFinder.html" target="_blank">Open Linkfinder</a></p>
+    <p class="inline">Find the motherblock of your coins.</p>
   </header>
   <form id="masterForm" class="box">
     <div class="inputMaster">
       <div class="input">
         <h2>The Source Transaction</h2>
-        <p>Enter a TransactionID</p>
-        <input id="startTransaction" required placeholder="f4184fc596403b9d638783cf57adfe4c75c605f6356fbc91338530e9831e9e16" pattern="^[a-f0-9]{64}$" title="Enter a valid Bitcoin transaction ID (64 hex characters)">
+        <h3>Enter a TransactionID</h3>
+        <input id="targetTransaction" required placeholder="Enter your TransactionID here (64 hex chars)" pattern="^[a-f0-9]{64}$" title="Enter a valid Bitcoin transaction ID (64 hex characters)">
       </div>
     </div>
     <button type="submit">Let's go!</button>
@@ -31,7 +32,7 @@
     <a id="donationLink">bc1qlxylv26hhrqzngqpax6cnyd3ds6dlrnyr49uw3</p>
     <a href="https://github.com/1uggl/cointracer">Github</a>
   </footer>
-  <script src="app.js" type="module"></script> 
+  <script src="index.js" type="module"></script> 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </body>
 </html>

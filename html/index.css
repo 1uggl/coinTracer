@@ -20,6 +20,16 @@ header {
   border-bottom: 1px solid white;
 }
 
+header a {
+  color: white;
+  text-decoration: none;
+}
+
+.inline {
+  margin: 1em 1em;
+  display: inline-block;
+}
+
 footer {
   flex: 0 0 auto;
   background-color: black;
@@ -45,34 +55,16 @@ form {
   flex-wrap: wrap;
   justify-content: space-between;
   row-gap: 2em;
+  text-align: center;
 }
-
 .inputMaster {
   width: 100%;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
 }
-.input {
-  flex: 1 1 auto;
-  min-width: 30em;
-}
-
-.inputMaster div:last-child {
-  text-align: right;
-}
-.input input {
+  input {
   height: 1.5em;
   font-size: 1.2em;
-  width: 90%;
-}
-button {
-  padding: 1em;
-  border: 2px solid white;
-  background-color: black;
-  color: white;
-  margin: 0 auto;
-}
+  width: 60%;
+  }
 
 .box {
   padding: 1em;
@@ -86,9 +78,6 @@ flex: 1;
 @media screen and (max-width: 1250px) {
   .input {
     width: 100%;
-  }
-  .inputMaster div:last-child {
-    text-align: center;
   }
   .inputMaster {
     flex-direction: column;
