@@ -1,10 +1,9 @@
 import express from 'express';
 import tls from 'tls';
-import bitcoin from 'bitcoinjs-lib';
 
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 app.use(express.json()); // Middleware zum Verarbeiten von JSON-Daten
 // Middleware zum Setzen des CORS-Headers
