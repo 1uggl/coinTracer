@@ -1,0 +1,30 @@
+@font-face  {
+  font-family: 'JetBrains Mono Nerd Font';
+  src: url('../fonts/JetBrainsMonoNerdFont-Regular.ttf') format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+}
+
+body {
+  font-family: 'JetBrains Mono Nerd Font', monospace;
+  background-color: #282c34;
+  color: white;
+}
+
+.header {
+  padding: .2em .5em;
+  border-bottom: 1px solid white;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
