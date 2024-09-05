@@ -1,18 +1,25 @@
 import react, { useState } from 'react'
 
-const Input = () => {
-  const [input, setInput] = useState("");
+const Input = ( { className, transaction, onInputChange }) => {
+  const [input, setInput] = useState(transaction)
+
+  const handleChange = event => {
+    setInput(event.target.value)
+  }
+
   const handleSubmit = event => {
     event.preventDefault();
-    alert("Läuft!")
+    onInputChange(input)
   }
-return (
-  <form onSubmit={handleSubmit}>
-  <label for="tx-input">Input your Transaction ID:</label>
-  <input id="tx-input" />
-  <button type="submit">Check Transaction</button>
-  </form>
-)
+  return (
+    <form className="Input" onSubmit={handleSubmit}>
+      <label for="tx-input">Input your Transaction ID:</label>
+      <div className= "Input-Box">
+        <input id="tx-input" value={input} onChange={handleChange} required />
+        <button type="submit">Check Transaction</button>
+      </div>
+    </form>
+  )
 }
 
 export default Input
