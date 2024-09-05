@@ -13,7 +13,7 @@ const Input = ( { className, transaction, onInputChange }) => {
   }
   return (
     <form className="Input" onSubmit={handleSubmit}>
-      <label for="tx-input">Input your Transaction ID:</label>
+      <label for="tx-input"><h3>Input your Transaction ID:</h3></label>
       <div className= "Input-Box">
         <input id="tx-input" value={input} onChange={handleChange} required />
         <button type="submit">Check Transaction</button>

@@ -61,3 +61,30 @@ body {
 .Input-Box button {
   padding: 0 .2em;
 }
+
+.Output {
+  padding: .5em .5em;
+}
+
+.Output h3 {
+  text-align: center;
+}
+
+.Endpoint {
+  padding: .5em .5em;
+}
+
+.Endpoint form{
+  margin-top: .5em;
+  display: flex;
+  gap: .5em;
+}
+
+.Endpoint input {
+  width: 32em;
+}
+
+.Endpoint button {
+  padding: 0 .2em;
+}
+
