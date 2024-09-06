@@ -1,6 +1,6 @@
 import react, { useState } from 'react'
 
-const Endpoint = ( {apiURL, onEndpointChange}) => {
+const Endpoint = ({ apiURL, onEndpointChange, statusMessage }) => {
   const [endPoint, setEndpoint] = useState(apiURL)
 
   const handleChange = event => {
@@ -9,10 +9,14 @@ const Endpoint = ( {apiURL, onEndpointChange}) => {
   const handleSubmit = event => {
     event.preventDefault();
     onEndpointChange(endPoint)
+    statusMessage("Endpoint changed")
   }
-  const handleReset = () => {
-    setEndpoint("http://localhost:3000/")
-    onEndpointChange(endPoint)
+  const handleReset = event => {
+    event.preventDefault();
+    const resetEndpoint = "http://localhost:3001/"
+    setEndpoint(resetEndpoint)
+    onEndpointChange(resetEndpoint)
+    statusMessage("Endpoint restored")
   }
 
   return (
@@ -22,7 +26,7 @@ const Endpoint = ( {apiURL, onEndpointChange}) => {
       <form  onSubmit={handleSubmit}>
         <input onChange={handleChange} value={endPoint} required/>
         <button type="submit">Change Endpoint</button>
-        <button onClick={handleReset}>Reset to http://localhost:3000/</button>
+        <button onClick={handleReset}>Reset to http://localhost:3001/</button>
       </form>
     </details>
     </div>

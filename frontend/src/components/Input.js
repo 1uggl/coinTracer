@@ -1,6 +1,6 @@
 import react, { useState } from 'react'
 
-const Input = ( { className, transaction, onInputChange }) => {
+const Input = ( { transaction, onInputChange }) => {
   const [input, setInput] = useState(transaction)
 
   const handleChange = event => {
