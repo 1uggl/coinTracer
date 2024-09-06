@@ -1,6 +1,6 @@
 import react, { useState } from 'react'
 
-const Input = ( { transaction, onInputChange }) => {
+const Input = ( { transaction, onInputChange, tracer }) => {
   const [input, setInput] = useState(transaction)
 
   const handleChange = event => {
@@ -18,6 +18,7 @@ const Input = ( { transaction, onInputChange }) => {
         <input id="tx-input" value={input} onChange={handleChange} required />
         <button type="submit">Check Transaction</button>
       </div>
+      <p>{tracer}</p>
     </form>
   )
 }

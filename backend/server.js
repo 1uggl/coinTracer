@@ -239,7 +239,7 @@ app.post('/traceTransactions', async (req, res) => {
 });
 
 app.post('/traceTransactionToCoinbase', async (req, res) => {
-  const targetTransactionID = req.body.targetTransactionID;
+  const targetTransactionID = req.body.transactionId;
   console.log("Received request for tracing Transaction:", targetTransactionID);
   try {
     const result = await traceTransactionToCoinbase(targetTransactionID);
